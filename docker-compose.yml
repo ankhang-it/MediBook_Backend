@@ -1,0 +1,53 @@
+services:
+  # PHP Service
+  app:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: medibook-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./backend:/var/www
+    user: "1000:1000"  # Thêm dòng này để map với user của host
+    networks:
+      - medibook-network
+
+  # MySQL Service
+  db:
+    image: mysql:8.0
+    container_name: medibook-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: medibook
+      MYSQL_ROOT_PASSWORD: medibook_password
+      MYSQL_PASSWORD: medibook_password
+      MYSQL_USER: medibook
+    volumes:
+      - dbdata:/var/lib/mysql/
+    ports:
+      - "3306:3306"
+    networks:
+      - medibook-network
+
+  # Nginx Service
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    container_name: medibook-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - medibook-network
+
+networks:
+  medibook-network:
+    driver: bridge
+
+volumes:
+  dbdata:
