@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Specialty;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SpecialtySeeder extends Seeder
@@ -18,37 +17,75 @@ class SpecialtySeeder extends Seeder
             [
                 'specialty_id' => Str::uuid(),
                 'name' => 'Tim mạch',
-                'description' => 'Khoa chuyên điều trị các bệnh lý về tim mạch và huyết áp'
-            ],
-            [
-                'specialty_id' => Str::uuid(),
-                'name' => 'Thần kinh',
-                'description' => 'Khoa chuyên điều trị các bệnh lý về hệ thần kinh'
-            ],
-            [
-                'specialty_id' => Str::uuid(),
-                'name' => 'Nhi khoa',
-                'description' => 'Khoa chuyên chăm sóc sức khỏe trẻ em từ sơ sinh đến 18 tuổi'
-            ],
-            [
-                'specialty_id' => Str::uuid(),
-                'name' => 'Da liễu',
-                'description' => 'Khoa chuyên điều trị các bệnh lý về da và thẩm mỹ da'
+                'description' => 'Chuyên khoa về tim và hệ tuần hoàn',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'specialty_id' => Str::uuid(),
                 'name' => 'Nội khoa',
-                'description' => 'Khoa chuyên điều trị các bệnh lý nội khoa tổng quát'
+                'description' => 'Chuyên khoa nội tổng hợp',
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'specialty_id' => Str::uuid(),
                 'name' => 'Ngoại khoa',
-                'description' => 'Khoa chuyên thực hiện các ca phẫu thuật và điều trị ngoại khoa'
-            ]
+                'description' => 'Chuyên khoa phẫu thuật',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'specialty_id' => Str::uuid(),
+                'name' => 'Sản phụ khoa',
+                'description' => 'Chuyên khoa sản và phụ khoa',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'specialty_id' => Str::uuid(),
+                'name' => 'Nhi khoa',
+                'description' => 'Chuyên khoa trẻ em',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'specialty_id' => Str::uuid(),
+                'name' => 'Thần kinh',
+                'description' => 'Chuyên khoa thần kinh và não bộ',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'specialty_id' => Str::uuid(),
+                'name' => 'Da liễu',
+                'description' => 'Chuyên khoa da và các bệnh về da',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'specialty_id' => Str::uuid(),
+                'name' => 'Mắt',
+                'description' => 'Chuyên khoa mắt và thị lực',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'specialty_id' => Str::uuid(),
+                'name' => 'Tai mũi họng',
+                'description' => 'Chuyên khoa tai mũi họng',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'specialty_id' => Str::uuid(),
+                'name' => 'Xương khớp',
+                'description' => 'Chuyên khoa xương khớp và cột sống',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
-        foreach ($specialties as $specialty) {
-            Specialty::create($specialty);
-        }
+        DB::table('specialties')->insert($specialties);
     }
 }

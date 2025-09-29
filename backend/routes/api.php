@@ -3,6 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\SpecialtyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,13 +35,44 @@ Route::group(['middleware' => 'api.auth'], function () {
     Route::get('user', function (Request $request) {
         return $request->user();
     });
+
+    // Patient routes
+    Route::prefix('patient')->group(function () {
+        Route::get('profile', [PatientController::class, 'getProfile']);
+        Route::put('profile', [PatientController::class, 'updateProfile']);
+        Route::post('avatar', [PatientController::class, 'uploadAvatar']);
+        Route::get('medical-history', [PatientController::class, 'getMedicalHistory']);
+        Route::get('appointments', [PatientController::class, 'getAppointments']);
+    });
+
+    // Admin routes
+    Route::prefix('admin')->group(function () {
+        Route::get('dashboard', [AdminController::class, 'getDashboardStats']);
+        Route::get('users', [AdminController::class, 'getUsers']);
+        Route::post('users', [AdminController::class, 'createUser']);
+        Route::put('users/{userId}', [AdminController::class, 'updateUser']);
+        Route::delete('users/{userId}', [AdminController::class, 'deleteUser']);
+        Route::get('doctors', [AdminController::class, 'getDoctors']);
+        Route::get('patients', [AdminController::class, 'getPatients']);
+        Route::get('appointments', [AdminController::class, 'getAppointments']);
+    });
+
+    // Specialty routes
+    Route::prefix('specialties')->group(function () {
+        Route::get('/', [SpecialtyController::class, 'getSpecialties']);
+        Route::get('/{id}', [SpecialtyController::class, 'getSpecialty']);
+        Route::post('/', [SpecialtyController::class, 'createSpecialty']);
+        Route::put('/{id}', [SpecialtyController::class, 'updateSpecialty']);
+        Route::delete('/{id}', [SpecialtyController::class, 'deleteSpecialty']);
+        Route::get('/{id}/doctors', [SpecialtyController::class, 'getDoctorsBySpecialty']);
+    });
 });
 
-// Health check route
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'OK',
-        'message' => 'MediBook API is running',
-        'timestamp' => now()
-    ]);
-});
+// // Health check route
+// Route::get('/health', function () {
+//     return response()->json([
+//         'status' => 'OK',
+//         'message' => 'MediBook API is running',
+//         'timestamp' => now()
+//     ]);
+// });
