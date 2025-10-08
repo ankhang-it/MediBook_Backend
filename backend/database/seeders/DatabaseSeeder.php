@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             PaymentSeeder::class,
             FeedbackSeeder::class,
             NotificationSeeder::class,
+            BookedAppointmentsSeeder::class, // New seeder for time slots appointments
         ]);
     }
 }

@@ -19,6 +19,7 @@ class Specialty extends Model
         'specialty_id',
         'name',
         'description',
+        'image',
     ];
 
     /**

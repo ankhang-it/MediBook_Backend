@@ -9,6 +9,7 @@ services:
     working_dir: /var/www/
     volumes:
       - ./backend:/var/www
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
     user: "1000:1000"  # Thêm dòng này để map với user của host
     networks:
       - medibook-network

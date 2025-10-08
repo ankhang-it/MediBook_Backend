@@ -110,7 +110,46 @@ class AdminController extends Controller
     }
 
     /**
-     * Get all doctors with their profiles.
+     * Get all doctors with their profiles (Public version).
+     */
+    public function getDoctorsPublic(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 15);
+            $search = $request->get('search', '');
+            $specialty = $request->get('specialty', '');
+
+            $query = DoctorProfile::with(['user', 'specialty', 'feedback']);
+
+            if ($search) {
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('username', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                })->orWhere('fullname', 'like', "%{$search}%");
+            }
+
+            if ($specialty) {
+                $query->where('specialty_id', $specialty);
+            }
+
+            $doctors = $query->orderBy('created_at', 'desc')
+                ->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $doctors
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve doctors',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all doctors with their profiles (Admin version).
      */
     public function getDoctors(Request $request)
     {

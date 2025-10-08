@@ -30,6 +30,7 @@ class DoctorProfileSeeder extends Seeder
                 'specialty_id' => $specialties['Tim mạch'],
                 'experience' => '15 năm kinh nghiệm trong lĩnh vực tim mạch. Tốt nghiệp Đại học Y Hà Nội, chuyên khoa Tim mạch. Đã thực hiện hơn 1000 ca phẫu thuật tim.',
                 'license_number' => 'BS001234',
+                'consultation_fee' => 800000,
                 'schedule' => json_encode([
                     'monday' => ['08:00-12:00', '14:00-17:00'],
                     'tuesday' => ['08:00-12:00', '14:00-17:00'],
@@ -49,6 +50,7 @@ class DoctorProfileSeeder extends Seeder
                 'specialty_id' => $specialties['Nội khoa'],
                 'experience' => '12 năm kinh nghiệm trong lĩnh vực nội khoa. Tốt nghiệp Đại học Y TP.HCM, chuyên khoa Nội tổng hợp.',
                 'license_number' => 'BS001235',
+                'consultation_fee' => 600000,
                 'schedule' => json_encode([
                     'monday' => ['08:00-12:00', '14:00-17:00'],
                     'tuesday' => ['08:00-12:00'],
@@ -68,6 +70,7 @@ class DoctorProfileSeeder extends Seeder
                 'specialty_id' => $specialties['Ngoại khoa'],
                 'experience' => '18 năm kinh nghiệm trong lĩnh vực ngoại khoa. Tốt nghiệp Đại học Y Hà Nội, chuyên khoa Ngoại tổng hợp.',
                 'license_number' => 'BS001236',
+                'consultation_fee' => 700000,
                 'schedule' => json_encode([
                     'monday' => ['08:00-12:00'],
                     'tuesday' => ['08:00-12:00', '14:00-17:00'],
@@ -87,6 +90,7 @@ class DoctorProfileSeeder extends Seeder
                 'specialty_id' => $specialties['Sản phụ khoa'],
                 'experience' => '10 năm kinh nghiệm trong lĩnh vực sản phụ khoa. Tốt nghiệp Đại học Y TP.HCM, chuyên khoa Sản phụ khoa.',
                 'license_number' => 'BS001237',
+                'consultation_fee' => 650000,
                 'schedule' => json_encode([
                     'monday' => ['08:00-12:00', '14:00-17:00'],
                     'tuesday' => ['08:00-12:00', '14:00-17:00'],
@@ -106,6 +110,7 @@ class DoctorProfileSeeder extends Seeder
                 'specialty_id' => $specialties['Nhi khoa'],
                 'experience' => '14 năm kinh nghiệm trong lĩnh vực nhi khoa. Tốt nghiệp Đại học Y Hà Nội, chuyên khoa Nhi.',
                 'license_number' => 'BS001238',
+                'consultation_fee' => 550000,
                 'schedule' => json_encode([
                     'monday' => ['08:00-12:00', '14:00-17:00'],
                     'tuesday' => ['08:00-12:00', '14:00-17:00'],

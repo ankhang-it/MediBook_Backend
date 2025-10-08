@@ -22,13 +22,19 @@ class SpecialtyController extends Controller
             $query = Specialty::query();
 
             if ($search) {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('description', 'like', "%{$search}%");
                 });
             }
 
             $specialties = $query->withCount('doctors')
+                ->with(['doctors' => function ($query) {
+                    $query->with(['user', 'feedback'])
+                        ->withCount('feedback')
+                        ->orderByRaw('(SELECT AVG(rating) FROM feedback WHERE doctor_id = doctor_profiles.doctor_id) DESC')
+                        ->limit(1);
+                }])
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
 
@@ -52,7 +58,7 @@ class SpecialtyController extends Controller
     {
         try {
             $specialty = Specialty::withCount('doctors')->find($id);
-            
+
             if (!$specialty) {
                 return response()->json([
                     'success' => false,
@@ -81,6 +87,7 @@ class SpecialtyController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:specialties',
             'description' => 'required|string|max:1000',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -92,10 +99,20 @@ class SpecialtyController extends Controller
         }
 
         try {
+            $imagePath = null;
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = 'specialty_' . time() . '.' . $image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('specialties', $imageName, 'public');
+            }
+
             $specialty = Specialty::create([
                 'specialty_id' => \Illuminate\Support\Str::uuid(),
                 'name' => $request->name,
                 'description' => $request->description,
+                'image' => $imagePath,
             ]);
 
             return response()->json([
@@ -118,7 +135,7 @@ class SpecialtyController extends Controller
     public function updateSpecialty(Request $request, $id)
     {
         $specialty = Specialty::find($id);
-        
+
         if (!$specialty) {
             return response()->json([
                 'success' => false,
@@ -129,6 +146,7 @@ class SpecialtyController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255|unique:specialties,name,' . $id . ',specialty_id',
             'description' => 'sometimes|required|string|max:1000',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -140,9 +158,24 @@ class SpecialtyController extends Controller
         }
 
         try {
+            $imagePath = $specialty->image;
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                // Delete old image if exists
+                if ($specialty->image) {
+                    \Storage::disk('public')->delete($specialty->image);
+                }
+
+                $image = $request->file('image');
+                $imageName = 'specialty_' . time() . '.' . $image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('specialties', $imageName, 'public');
+            }
+
             $specialty->update([
                 'name' => $request->get('name', $specialty->name),
                 'description' => $request->get('description', $specialty->description),
+                'image' => $imagePath,
             ]);
 
             return response()->json([
@@ -165,7 +198,7 @@ class SpecialtyController extends Controller
     public function deleteSpecialty($id)
     {
         $specialty = Specialty::find($id);
-        
+
         if (!$specialty) {
             return response()->json([
                 'success' => false,
@@ -204,7 +237,7 @@ class SpecialtyController extends Controller
     {
         try {
             $specialty = Specialty::find($id);
-            
+
             if (!$specialty) {
                 return response()->json([
                     'success' => false,
@@ -218,9 +251,9 @@ class SpecialtyController extends Controller
             $query = $specialty->doctors()->with(['user', 'specialty']);
 
             if ($search) {
-                $query->whereHas('user', function($q) use ($search) {
+                $query->whereHas('user', function ($q) use ($search) {
                     $q->where('username', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%");
                 })->orWhere('fullname', 'like', "%{$search}%");
             }
 

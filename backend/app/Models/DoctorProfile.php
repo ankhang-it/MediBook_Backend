@@ -23,7 +23,9 @@ class DoctorProfile extends Model
         'specialty_id',
         'experience',
         'license_number',
+        'consultation_fee',
         'schedule',
+        'bio',
     ];
 
     protected function casts(): array

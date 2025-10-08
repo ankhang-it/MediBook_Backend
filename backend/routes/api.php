@@ -4,8 +4,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PatientController;
+use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\SpecialtyController;
+use App\Http\Controllers\Api\TimeSlotController;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,6 +24,20 @@ use App\Http\Controllers\Api\SpecialtyController;
 // Public routes
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
+
+// Public routes for departments page
+Route::get('public/doctors', [AdminController::class, 'getDoctorsPublic']);
+Route::get('public/specialties', [SpecialtyController::class, 'getSpecialties']);
+
+// Public routes for time slots
+Route::get('public/time-slots', [TimeSlotController::class, 'getAvailableSlots']);
+Route::post('public/book-slot', [TimeSlotController::class, 'bookSlot']);
+
+// Payment routes
+Route::post('payment/create', [PaymentController::class, 'createPayment']);
+Route::get('payment/status', [PaymentController::class, 'getPaymentStatus']);
+Route::match(['get', 'post'], 'payment/callback', [PaymentController::class, 'callback'])
+    ->withoutMiddleware(['auth:api']);
 
 // Protected routes
 Route::group(['middleware' => 'api.auth'], function () {
@@ -45,6 +62,15 @@ Route::group(['middleware' => 'api.auth'], function () {
         Route::get('appointments', [PatientController::class, 'getAppointments']);
     });
 
+    // Doctor routes
+    Route::prefix('doctor')->group(function () {
+        Route::get('profile', [DoctorController::class, 'getProfile']);
+        Route::post('profile', [DoctorController::class, 'updateProfile']);
+        Route::get('appointments', [DoctorController::class, 'getAppointments']);
+        Route::put('appointments/{appointmentId}/status', [DoctorController::class, 'updateAppointmentStatus']);
+        Route::get('statistics', [DoctorController::class, 'getStatistics']);
+    });
+
     // Admin routes
     Route::prefix('admin')->group(function () {
         Route::get('dashboard', [AdminController::class, 'getDashboardStats']);
@@ -67,6 +93,12 @@ Route::group(['middleware' => 'api.auth'], function () {
         Route::get('/{id}/doctors', [SpecialtyController::class, 'getDoctorsBySpecialty']);
     });
 });
+
+// Payment routes
+Route::post('payment/create', [PaymentController::class, 'createPayment']);
+Route::get('payment/status', [PaymentController::class, 'getPaymentStatus']);
+Route::match(['get', 'post'], 'payment/callback', [PaymentController::class, 'callback'])
+    ->withoutMiddleware(['auth:api']);
 
 // // Health check route
 // Route::get('/health', function () {

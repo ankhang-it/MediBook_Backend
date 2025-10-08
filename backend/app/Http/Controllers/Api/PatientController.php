@@ -20,7 +20,7 @@ class PatientController extends Controller
     public function getProfile()
     {
         $user = auth()->user();
-        
+
         if (!$user->isPatient()) {
             return response()->json([
                 'success' => false,
@@ -29,7 +29,7 @@ class PatientController extends Controller
         }
 
         $patientProfile = $user->patientProfile;
-        
+
         if (!$patientProfile) {
             return response()->json([
                 'success' => false,
@@ -67,7 +67,7 @@ class PatientController extends Controller
     public function updateProfile(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->isPatient()) {
             return response()->json([
                 'success' => false,
@@ -126,7 +126,7 @@ class PatientController extends Controller
     public function uploadAvatar(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->isPatient()) {
             return response()->json([
                 'success' => false,
@@ -156,7 +156,7 @@ class PatientController extends Controller
             $file = $request->file('avatar');
             $filename = 'avatar_' . $user->user_id . '_' . time() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('avatars', $filename, 'public');
-            
+
             // Update user avatar path
             $user->update([
                 'avatar' => Storage::url($path)
@@ -184,7 +184,7 @@ class PatientController extends Controller
     public function getMedicalHistory(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->isPatient()) {
             return response()->json([
                 'success' => false,
@@ -193,7 +193,7 @@ class PatientController extends Controller
         }
 
         $patientProfile = $user->patientProfile;
-        
+
         if (!$patientProfile) {
             return response()->json([
                 'success' => false,
@@ -204,29 +204,29 @@ class PatientController extends Controller
         try {
             // Get medical records through appointments
             $medicalRecords = MedicalRecord::with([
-                'appointment' => function($query) use ($patientProfile) {
+                'appointment' => function ($query) use ($patientProfile) {
                     $query->where('patient_id', $patientProfile->patient_id);
                 },
-                'doctor' => function($query) {
+                'doctor' => function ($query) {
                     $query->with('user');
                 }
             ])
-            ->whereHas('appointment', function($query) use ($patientProfile) {
-                $query->where('patient_id', $patientProfile->patient_id);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+                ->whereHas('appointment', function ($query) use ($patientProfile) {
+                    $query->where('patient_id', $patientProfile->patient_id);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
 
             // Get appointments with medical records
             $appointments = Appointment::with([
-                'doctor' => function($query) {
+                'doctor' => function ($query) {
                     $query->with('user');
                 },
                 'medicalRecord'
             ])
-            ->where('patient_id', $patientProfile->patient_id)
-            ->orderBy('appointment_date', 'desc')
-            ->get();
+                ->where('patient_id', $patientProfile->patient_id)
+                ->orderBy('appointment_date', 'desc')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -250,7 +250,7 @@ class PatientController extends Controller
     public function getAppointments(Request $request)
     {
         $user = auth()->user();
-        
+
         if (!$user->isPatient()) {
             return response()->json([
                 'success' => false,
@@ -259,7 +259,7 @@ class PatientController extends Controller
         }
 
         $patientProfile = $user->patientProfile;
-        
+
         if (!$patientProfile) {
             return response()->json([
                 'success' => false,
@@ -269,14 +269,15 @@ class PatientController extends Controller
 
         try {
             $appointments = Appointment::with([
-                'doctor' => function($query) {
+                'doctor' => function ($query) {
                     $query->with('user');
                 },
-                'medicalRecord'
+                'medicalRecord',
+                'timeSlot'
             ])
-            ->where('patient_id', $patientProfile->patient_id)
-            ->orderBy('appointment_date', 'desc')
-            ->get();
+                ->where('patient_id', $patientProfile->patient_id)
+                ->orderBy('schedule_time', 'desc')
+                ->get();
 
             return response()->json([
                 'success' => true,

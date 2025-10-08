@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -26,6 +27,9 @@ class ApiAuthMiddleware
                     'message' => 'User not found'
                 ], 401);
             }
+
+            // Set user in Auth facade
+            Auth::setUser($user);
 
             // Add user to request
             $request->setUserResolver(function () use ($user) {

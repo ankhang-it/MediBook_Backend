@@ -20,6 +20,7 @@ class Appointment extends Model
         'appointment_id',
         'patient_id',
         'doctor_id',
+        'time_slot_id',
         'schedule_time',
         'status',
         'payment_status',
@@ -47,6 +48,14 @@ class Appointment extends Model
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(DoctorProfile::class, 'doctor_id', 'doctor_id');
+    }
+
+    /**
+     * Get the time slot for the appointment.
+     */
+    public function timeSlot(): BelongsTo
+    {
+        return $this->belongsTo(TimeSlot::class, 'time_slot_id');
     }
 
     /**
