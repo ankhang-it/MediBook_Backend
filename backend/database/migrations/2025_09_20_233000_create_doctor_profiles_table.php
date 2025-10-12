@@ -18,6 +18,8 @@ return new class extends Migration
             $table->uuid('specialty_id')->nullable();
             $table->text('experience')->nullable();
             $table->string('license_number')->nullable();
+            $table->decimal('consultation_fee', 10, 2)->default(500000);
+            $table->text('bio')->nullable();
             $table->json('schedule')->nullable();
             $table->timestamps();
 

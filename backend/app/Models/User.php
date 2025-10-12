@@ -47,6 +47,24 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
+     * Get the avatar URL attribute.
+     */
+    public function getAvatarAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        // If it's already a full URL, return as is
+        if (str_starts_with($value, 'http')) {
+            return $value;
+        }
+
+        // Convert relative path to full URL with correct port
+        return 'http://localhost:8000/' . ltrim($value, '/');
+    }
+
+    /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      */
     public function getJWTIdentifier()

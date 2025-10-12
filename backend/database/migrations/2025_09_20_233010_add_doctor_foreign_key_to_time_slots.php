@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('doctor_profiles', function (Blueprint $table) {
-            $table->text('bio')->nullable()->after('consultation_fee');
+        Schema::table('time_slots', function (Blueprint $table) {
+            $table->foreign('doctor_id')->references('doctor_id')->on('doctor_profiles')->onDelete('cascade');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('doctor_profiles', function (Blueprint $table) {
-            $table->dropColumn('bio');
+        Schema::table('time_slots', function (Blueprint $table) {
+            $table->dropForeign(['doctor_id']);
         });
     }
 };

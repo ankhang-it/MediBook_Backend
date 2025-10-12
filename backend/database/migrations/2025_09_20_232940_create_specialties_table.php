@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('specialty_id')->primary();
             $table->string('name');
             $table->text('description')->nullable();
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

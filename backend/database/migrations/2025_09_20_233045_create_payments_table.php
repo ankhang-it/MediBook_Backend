@@ -13,15 +13,25 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('payment_id')->primary();
-            $table->integer('order_id');
+            $table->integer('order_id')->nullable();
             $table->decimal('total_amount', 10, 2);
             $table->enum('status', ['pending', 'completed', 'failed', 'cancelled'])->default('pending');
             $table->string('description');
             $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
             $table->uuid('appointment_id')->nullable();
+
+            // PayOS specific fields
+            $table->integer('order_code')->nullable();
+            $table->string('payment_link_id')->nullable();
+            $table->text('checkout_url')->nullable();
+            $table->text('qr_code')->nullable();
+            $table->json('payment_info')->nullable();
+            $table->timestamp('paid_at')->nullable();
+
             $table->timestamps();
 
             $table->foreign('appointment_id')->references('appointment_id')->on('appointments')->onDelete('set null');
+            $table->index(['payment_link_id', 'order_code']);
         });
     }
 

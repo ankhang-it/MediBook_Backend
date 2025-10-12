@@ -202,38 +202,51 @@ class PatientController extends Controller
         }
 
         try {
-            // Get medical records through appointments
-            $medicalRecords = MedicalRecord::with([
-                'appointment' => function ($query) use ($patientProfile) {
-                    $query->where('patient_id', $patientProfile->patient_id);
+            // Get appointments with medical records for this patient
+            $appointments = Appointment::with([
+                'patient' => function ($query) {
+                    $query->with('user');
                 },
                 'doctor' => function ($query) {
-                    $query->with('user');
-                }
-            ])
-                ->whereHas('appointment', function ($query) use ($patientProfile) {
-                    $query->where('patient_id', $patientProfile->patient_id);
-                })
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            // Get appointments with medical records
-            $appointments = Appointment::with([
-                'doctor' => function ($query) {
-                    $query->with('user');
+                    $query->with(['user', 'specialty']);
                 },
                 'medicalRecord'
             ])
                 ->where('patient_id', $patientProfile->patient_id)
-                ->orderBy('appointment_date', 'desc')
+                ->where('status', 'completed') // Only get completed appointments
+                ->orderBy('schedule_time', 'desc')
                 ->get();
+
+            // Extract medical records from appointments
+            $medicalRecords = $appointments->map(function ($appointment) {
+                if ($appointment->medicalRecord) {
+                    return [
+                        'record_id' => $appointment->medicalRecord->record_id,
+                        'appointment_id' => $appointment->appointment_id,
+                        'patient' => [
+                            'patient_id' => $appointment->patient->patient_id,
+                            'fullname' => $appointment->patient->fullname,
+                            'user' => $appointment->patient->user
+                        ],
+                        'doctor' => [
+                            'doctor_id' => $appointment->doctor->doctor_id,
+                            'fullname' => $appointment->doctor->fullname,
+                            'specialty' => $appointment->doctor->specialty,
+                            'user' => $appointment->doctor->user
+                        ],
+                        'diagnosis' => $appointment->medicalRecord->diagnosis,
+                        'prescription' => $appointment->medicalRecord->prescription,
+                        'notes' => $appointment->medicalRecord->notes,
+                        'appointment_date' => $appointment->schedule_time,
+                        'created_at' => $appointment->medicalRecord->created_at,
+                    ];
+                }
+                return null;
+            })->filter()->values();
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'medical_records' => $medicalRecords,
-                    'appointments' => $appointments
-                ]
+                'data' => $medicalRecords
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -269,8 +282,11 @@ class PatientController extends Controller
 
         try {
             $appointments = Appointment::with([
-                'doctor' => function ($query) {
+                'patient' => function ($query) {
                     $query->with('user');
+                },
+                'doctor' => function ($query) {
+                    $query->with(['user', 'specialty']);
                 },
                 'medicalRecord',
                 'timeSlot'

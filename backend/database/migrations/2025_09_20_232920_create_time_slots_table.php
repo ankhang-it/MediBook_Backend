@@ -17,7 +17,6 @@ return new class extends Migration
             $table->boolean('is_available')->default(true);
             $table->timestamps();
 
-            $table->foreign('doctor_id')->references('doctor_id')->on('doctor_profiles')->onDelete('cascade');
             $table->unique(['doctor_id', 'date', 'start_time'], 'unique_slot');
             $table->index(['doctor_id', 'date', 'is_available']);
         });

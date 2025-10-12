@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('appointment_id')->primary();
             $table->uuid('patient_id');
             $table->uuid('doctor_id');
+            $table->unsignedBigInteger('time_slot_id')->nullable();
             $table->datetime('schedule_time');
             $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
             $table->enum('payment_status', ['unpaid', 'paid', 'refunded'])->default('unpaid');
