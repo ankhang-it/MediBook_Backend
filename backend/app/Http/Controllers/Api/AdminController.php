@@ -135,6 +135,14 @@ class AdminController extends Controller
             $doctors = $query->orderBy('created_at', 'desc')
                 ->paginate($perPage);
 
+            // Add rating information to each doctor
+            $doctors->getCollection()->transform(function ($doctor) {
+                $doctor->average_rating = $doctor->average_rating;
+                $doctor->total_reviews = $doctor->total_reviews;
+                $doctor->rating_breakdown = $doctor->rating_breakdown;
+                return $doctor;
+            });
+
             return response()->json([
                 'success' => true,
                 'data' => $doctors
