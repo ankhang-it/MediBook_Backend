@@ -80,7 +80,8 @@ class DoctorProfile extends Model
      */
     public function getAverageRatingAttribute()
     {
-        return $this->feedback()->avg('rating') ?? 0;
+        $avgRating = $this->feedback()->avg('rating');
+        return $avgRating ? round($avgRating, 1) : 0;
     }
 
     /**
@@ -89,5 +90,31 @@ class DoctorProfile extends Model
     public function getTotalReviewsAttribute()
     {
         return $this->feedback()->count();
+    }
+
+    /**
+     * Get the rating breakdown (count of each star rating).
+     */
+    public function getRatingBreakdownAttribute()
+    {
+        return $this->feedback()
+            ->selectRaw('rating, COUNT(*) as count')
+            ->groupBy('rating')
+            ->orderBy('rating', 'desc')
+            ->get()
+            ->pluck('count', 'rating')
+            ->toArray();
+    }
+
+    /**
+     * Get recent feedback for the doctor.
+     */
+    public function getRecentFeedbackAttribute()
+    {
+        return $this->feedback()
+            ->with('patient.user')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
     }
 }

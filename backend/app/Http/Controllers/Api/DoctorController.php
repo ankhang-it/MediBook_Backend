@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DoctorProfile;
 use App\Models\Appointment;
 use App\Models\Feedback;
+use App\Models\MedicalRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,7 +19,7 @@ class DoctorController extends Controller
     {
         try {
             $user = Auth::user();
-            $doctor = DoctorProfile::with(['user', 'specialty', 'feedback'])
+            $doctor = DoctorProfile::with(['user', 'specialty', 'feedback.patient.user'])
                 ->where('user_id', $user->user_id)
                 ->first();
 
@@ -28,6 +29,12 @@ class DoctorController extends Controller
                     'message' => 'Doctor profile not found'
                 ], 404);
             }
+
+            // Add rating information
+            $doctor->average_rating = $doctor->average_rating;
+            $doctor->total_reviews = $doctor->total_reviews;
+            $doctor->rating_breakdown = $doctor->rating_breakdown;
+            $doctor->recent_feedback = $doctor->recent_feedback;
 
             return response()->json([
                 'success' => true,
@@ -221,7 +228,14 @@ class DoctorController extends Controller
                 ], 404);
             }
 
-            $appointments = Appointment::with(['patient.user', 'doctor.user'])
+            $appointments = Appointment::with([
+                'patient' => function ($query) {
+                    $query->with('user');
+                },
+                'doctor' => function ($query) {
+                    $query->with('user');
+                }
+            ])
                 ->where('doctor_id', $doctor->doctor_id)
                 ->orderBy('schedule_time', 'desc')
                 ->get();
@@ -282,6 +296,124 @@ class DoctorController extends Controller
     }
 
     /**
+     * Create medical record for completed appointment
+     */
+    public function createMedicalRecord(Request $request, $appointmentId)
+    {
+        try {
+            $user = Auth::user();
+            $doctor = DoctorProfile::where('user_id', $user->user_id)->first();
+
+            if (!$doctor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Doctor profile not found'
+                ], 404);
+            }
+
+            // Validate request
+            $request->validate([
+                'diagnosis' => 'required|string|max:1000',
+                'prescription' => 'required|string|max:1000',
+                'notes' => 'nullable|string|max:1000'
+            ]);
+
+            // Check if appointment exists and belongs to this doctor
+            $appointment = Appointment::where('appointment_id', $appointmentId)
+                ->where('doctor_id', $doctor->doctor_id)
+                ->first();
+
+            if (!$appointment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Appointment not found'
+                ], 404);
+            }
+
+            // Check if appointment is completed
+            if ($appointment->status !== 'completed') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Appointment must be completed before creating medical record'
+                ], 400);
+            }
+
+            // Check if medical record already exists
+            $existingRecord = MedicalRecord::where('appointment_id', $appointmentId)->first();
+            if ($existingRecord) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Medical record already exists for this appointment'
+                ], 400);
+            }
+
+            // Create medical record
+            $medicalRecord = MedicalRecord::create([
+                'record_id' => \Illuminate\Support\Str::uuid(),
+                'appointment_id' => $appointmentId,
+                'doctor_id' => $doctor->doctor_id,
+                'diagnosis' => $request->diagnosis,
+                'prescription' => $request->prescription,
+                'notes' => $request->notes
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Medical record created successfully',
+                'data' => $medicalRecord
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create medical record: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all doctors with rating information
+     */
+    public function getAllDoctors()
+    {
+        try {
+            $doctors = DoctorProfile::with(['user', 'specialty', 'feedback'])
+                ->get()
+                ->map(function ($doctor) {
+                    return [
+                        'doctor_id' => $doctor->doctor_id,
+                        'fullname' => $doctor->fullname,
+                        'specialty' => $doctor->specialty,
+                        'experience' => $doctor->experience,
+                        'consultation_fee' => $doctor->consultation_fee,
+                        'bio' => $doctor->bio,
+                        'user' => $doctor->user,
+                        'average_rating' => $doctor->average_rating,
+                        'total_reviews' => $doctor->total_reviews,
+                        'rating_breakdown' => $doctor->rating_breakdown,
+                        'created_at' => $doctor->created_at,
+                        'updated_at' => $doctor->updated_at
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $doctors
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve doctors: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get doctor statistics
      */
     public function getStatistics()
@@ -319,7 +451,9 @@ class DoctorController extends Controller
                     'today_appointments' => $todayAppointments,
                     'pending_appointments' => $pendingAppointments,
                     'completed_appointments' => $completedAppointments,
-                    'average_rating' => round($averageRating, 1)
+                    'average_rating' => round($averageRating, 1),
+                    'total_reviews' => $doctor->total_reviews,
+                    'rating_breakdown' => $doctor->rating_breakdown
                 ]
             ]);
         } catch (\Exception $e) {

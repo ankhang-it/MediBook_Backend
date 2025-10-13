@@ -68,7 +68,9 @@ Route::group(['middleware' => 'api.auth'], function () {
         Route::post('profile', [DoctorController::class, 'updateProfile']);
         Route::get('appointments', [DoctorController::class, 'getAppointments']);
         Route::put('appointments/{appointmentId}/status', [DoctorController::class, 'updateAppointmentStatus']);
+        Route::post('appointments/{appointmentId}/medical-record', [DoctorController::class, 'createMedicalRecord']);
         Route::get('statistics', [DoctorController::class, 'getStatistics']);
+        Route::get('all', [DoctorController::class, 'getAllDoctors']); // Get all doctors with ratings
     });
 
     // Admin routes

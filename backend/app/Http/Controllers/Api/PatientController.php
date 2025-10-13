@@ -107,9 +107,32 @@ class PatientController extends Controller
                 'medical_history' => $request->medical_history,
             ]);
 
+            // Refresh user and patient profile data
+            $user->refresh();
+            $user->load('patientProfile');
+
             return response()->json([
                 'success' => true,
-                'message' => 'Profile updated successfully'
+                'message' => 'Profile updated successfully',
+                'data' => [
+                    'user' => [
+                        'user_id' => $user->user_id,
+                        'username' => $user->username,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                        'avatar' => $user->avatar,
+                        'role' => $user->role,
+                    ],
+                    'profile' => [
+                        'patient_id' => $user->patientProfile->patient_id,
+                        'fullname' => $user->patientProfile->fullname,
+                        'dob' => $user->patientProfile->dob,
+                        'gender' => $user->patientProfile->gender,
+                        'address' => $user->patientProfile->address,
+                        'medical_history' => $user->patientProfile->medical_history,
+                        'age' => $user->patientProfile->age,
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
