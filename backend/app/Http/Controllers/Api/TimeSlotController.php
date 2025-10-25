@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TimeSlot;
 use App\Models\DoctorProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
@@ -47,9 +48,9 @@ class TimeSlotController extends Controller
             // Generate slots if they don't exist
             TimeSlot::generateSlotsForDoctor($doctorId, $date);
 
-            // Get available slots
+            // Get available slots (bắt đầu từ ngày mai)
             $slots = [];
-            for ($i = 0; $i < $days; $i++) {
+            for ($i = 1; $i <= $days; $i++) {
                 $currentDate = date('Y-m-d', strtotime($date . " +{$i} days"));
                 $daySlots = TimeSlot::getAvailableSlots($doctorId, $currentDate);
 
@@ -59,7 +60,10 @@ class TimeSlotController extends Controller
                             'id' => $slot->id,
                             'start_time' => $slot->start_time,
                             'end_time' => $slot->end_time,
-                            'formatted_time' => $this->formatTimeSlot($slot->start_time, $slot->end_time)
+                            'formatted_time' => $this->formatTimeSlot($slot->start_time, $slot->end_time),
+                            'max_capacity' => $slot->max_capacity,
+                            'current_bookings' => $slot->current_bookings,
+                            'remaining_capacity' => $slot->remaining_capacity
                         ];
                     });
                 }
@@ -110,32 +114,27 @@ class TimeSlotController extends Controller
 
         try {
             // Use database transaction to prevent race conditions
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             // Lock the time slot row for update to prevent race conditions
             $timeSlot = TimeSlot::where('id', $request->time_slot_id)
-                ->where('is_available', true)
                 ->lockForUpdate()
                 ->first();
 
             if (!$timeSlot) {
-                \DB::rollBack();
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Time slot is not available or already booked'
-                ], 400);
+                    'message' => 'Time slot not found'
+                ], 404);
             }
 
-            // Double check if there's already an appointment for this slot
-            $existingAppointment = \App\Models\Appointment::where('time_slot_id', $timeSlot->id)
-                ->whereIn('status', ['pending', 'confirmed'])
-                ->first();
-
-            if ($existingAppointment) {
-                \DB::rollBack();
+            // Check if slot is fully booked
+            if ($timeSlot->current_bookings >= $timeSlot->max_capacity) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Time slot is already booked'
+                    'message' => 'Time slot is fully booked'
                 ], 400);
             }
 
@@ -152,10 +151,9 @@ class TimeSlotController extends Controller
                 'payment_status' => 'unpaid'
             ]);
 
-            // Mark time slot as unavailable
-            $timeSlot->update(['is_available' => false]);
+            // Note: incrementBookings() is called automatically via model event
 
-            \DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -163,7 +161,7 @@ class TimeSlotController extends Controller
                 'data' => $appointment
             ]);
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             Log::error('BookSlot error:', [
                 'error' => $e->getMessage(),
                 'request_data' => $request->all()

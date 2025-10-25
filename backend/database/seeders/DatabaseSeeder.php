@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             FeedbackSeeder::class,
             NotificationSeeder::class,
             BookedAppointmentsSeeder::class, // New seeder for time slots appointments
+            RegenerateTimeSlotsSeeder::class, // Regenerate time slots with new schedule
         ]);
     }
 }

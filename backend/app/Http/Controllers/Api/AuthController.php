@@ -78,6 +78,7 @@ class AuthController extends Controller
                     'username' => $user->username,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'avatar' => $user->avatar,
                     'role' => $user->role,
                 ],
                 'profile' => $profile,
@@ -179,6 +180,7 @@ class AuthController extends Controller
                         'username' => $user->username,
                         'email' => $user->email,
                         'phone' => $user->phone,
+                        'avatar' => $user->avatar,
                         'role' => $user->role,
                     ],
                     'token' => $token,
@@ -218,6 +220,7 @@ class AuthController extends Controller
                     'username' => $user->username,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'avatar' => $user->avatar,
                     'role' => $user->role,
                 ],
                 'profile' => $profile

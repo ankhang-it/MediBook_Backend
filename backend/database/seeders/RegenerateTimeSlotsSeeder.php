@@ -13,21 +13,15 @@ class RegenerateTimeSlotsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Clear existing time slots
-        TimeSlot::truncate();
-        
         // Get all doctors
         $doctors = DoctorProfile::all();
-        
+
         foreach ($doctors as $doctor) {
-            // Generate time slots for each doctor
+            // Generate time slots for the next 7 days
             TimeSlot::generateSlotsForDoctor($doctor->doctor_id);
-            
-            $this->command->info("Generated time slots for doctor: {$doctor->fullname}");
         }
-        
-        $this->command->info('Time slots regenerated successfully with new schedule rules!');
-        $this->command->info('Schedule: Monday-Friday (8:00-10:30, 14:00-16:30), Saturday (8:00-10:30 only), Sunday (closed)');
+
+        $this->command->info('Time slots regenerated successfully!');
+        $this->command->info('Schedule: Monday to Saturday Morning (8:00-10:30), Monday to Friday Afternoon (14:00-16:30)');
     }
 }
-

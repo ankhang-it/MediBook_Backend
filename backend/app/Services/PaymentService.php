@@ -179,6 +179,36 @@ class PaymentService
                     'appointment_id' => $appointment->appointment_id,
                     'time_slot_id' => $appointment->time_slot_id
                 ]);
+
+                // Send email notifications
+                try {
+                    // Load relationships for email
+                    $appointment->load(['patient.user', 'doctor.user', 'doctor.specialty']);
+
+                    // Send email to patient
+                    if ($appointment->patient && $appointment->patient->user && $appointment->patient->user->email) {
+                        \Mail::to($appointment->patient->user->email)
+                            ->send(new \App\Mail\AppointmentConfirmedPatient($appointment));
+                        Log::info('Confirmation email sent to patient', [
+                            'patient_email' => $appointment->patient->user->email
+                        ]);
+                    }
+
+                    // Send email to doctor
+                    if ($appointment->doctor && $appointment->doctor->user && $appointment->doctor->user->email) {
+                        \Mail::to($appointment->doctor->user->email)
+                            ->send(new \App\Mail\AppointmentConfirmedDoctor($appointment));
+                        Log::info('Notification email sent to doctor', [
+                            'doctor_email' => $appointment->doctor->user->email
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Log email error but don't fail the transaction
+                    Log::error('Failed to send appointment confirmation emails', [
+                        'error' => $e->getMessage(),
+                        'appointment_id' => $appointment->appointment_id
+                    ]);
+                }
             }
 
             DB::commit();

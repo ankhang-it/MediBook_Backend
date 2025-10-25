@@ -73,4 +73,82 @@ class Appointment extends Model
     {
         return $this->hasOne(Payment::class, 'appointment_id', 'appointment_id');
     }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When appointment is created, increment time slot bookings
+        static::created(function ($appointment) {
+            // Ensure timeSlot relationship is loaded
+            $appointment->load('timeSlot');
+
+            if ($appointment->timeSlot) {
+                $beforeBookings = $appointment->timeSlot->current_bookings;
+
+                \Log::info('📈 Incrementing bookings for time slot', [
+                    'time_slot_id' => $appointment->time_slot_id,
+                    'before_current_bookings' => $beforeBookings,
+                    'max_capacity' => $appointment->timeSlot->max_capacity
+                ]);
+
+                // Increment bookings - this updates the database directly
+                $appointment->timeSlot->increment('current_bookings');
+
+                // Calculate values from memory (don't refresh from DB within transaction)
+                $afterBookings = $beforeBookings + 1;
+                $remainingCapacity = $appointment->timeSlot->max_capacity - $afterBookings;
+
+                \Log::info('✅ Bookings incremented', [
+                    'time_slot_id' => $appointment->time_slot_id,
+                    'after_current_bookings' => $afterBookings,
+                    'remaining_capacity' => $remainingCapacity
+                ]);
+
+                // Mark as unavailable if full
+                if ($afterBookings >= $appointment->timeSlot->max_capacity) {
+                    $appointment->timeSlot->update(['is_available' => false]);
+                    \Log::info('🔴 Time slot marked as unavailable (full)', [
+                        'time_slot_id' => $appointment->time_slot_id
+                    ]);
+                }
+            } else {
+                \Log::warning('⚠️ TimeSlot not found for appointment', [
+                    'appointment_id' => $appointment->appointment_id,
+                    'time_slot_id' => $appointment->time_slot_id
+                ]);
+            }
+        });
+
+        // When appointment is cancelled, decrement time slot bookings
+        static::updated(function ($appointment) {
+            if ($appointment->isDirty('status')) {
+                $oldStatus = $appointment->getOriginal('status');
+                $newStatus = $appointment->status;
+
+                // If status changed from active to cancelled
+                if (in_array($oldStatus, ['pending', 'confirmed']) && $newStatus === 'cancelled') {
+                    if ($appointment->timeSlot) {
+                        $appointment->timeSlot->decrementBookings();
+                    }
+                }
+                // If status changed from cancelled to active
+                elseif ($oldStatus === 'cancelled' && in_array($newStatus, ['pending', 'confirmed'])) {
+                    if ($appointment->timeSlot) {
+                        $appointment->timeSlot->incrementBookings();
+                    }
+                }
+            }
+        });
+
+        // When appointment is deleted, decrement time slot bookings
+        static::deleted(function ($appointment) {
+            if ($appointment->timeSlot && in_array($appointment->status, ['pending', 'confirmed'])) {
+                $appointment->timeSlot->decrementBookings();
+            }
+        });
+    }
 }
