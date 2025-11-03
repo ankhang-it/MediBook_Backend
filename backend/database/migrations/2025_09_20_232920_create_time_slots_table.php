@@ -15,6 +15,8 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->boolean('is_available')->default(true);
+            $table->integer('max_capacity')->default(5);
+            $table->integer('current_bookings')->default(0);
             $table->timestamps();
 
             $table->unique(['doctor_id', 'date', 'start_time'], 'unique_slot');

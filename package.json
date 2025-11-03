@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "description": "MediBook Backend with Docker & Ngrok",
     "scripts": {
-        "ngrok": "ngrok.exe http 8000",
-        "ngrok:config": "ngrok.exe config add-authtoken 2yQcuNDu3w0LCj3JK5VRNlYNB0L_3xPcej5J4YgcnSQUk2jX6"
+        "ngrok": ".\\ngrok.exe http 8000",
+        "ngrok:config": ".\\ngrok.exe config add-authtoken 2yQcuNDu3w0LCj3JK5VRNlYNB0L_3xPcej5J4YgcnSQUk2jX6"
     },
     "devDependencies": {
         "concurrently": "^9.0.1"
