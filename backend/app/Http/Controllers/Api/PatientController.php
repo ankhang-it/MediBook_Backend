@@ -233,7 +233,7 @@ class PatientController extends Controller
                 'doctor' => function ($query) {
                     $query->with(['user', 'specialty']);
                 },
-                'medicalRecord'
+                'medicalRecord.files'
             ])
                 ->where('patient_id', $patientProfile->patient_id)
                 ->where('status', 'completed') // Only get completed appointments
@@ -260,6 +260,9 @@ class PatientController extends Controller
                         'diagnosis' => $appointment->medicalRecord->diagnosis,
                         'prescription' => $appointment->medicalRecord->prescription,
                         'notes' => $appointment->medicalRecord->notes,
+                        'lab_result_file_url' => $appointment->medicalRecord->lab_result_file_url,
+                        'lab_result_file_name' => $appointment->medicalRecord->lab_result_file_name,
+                        'lab_result_files' => $appointment->medicalRecord->lab_result_files,
                         'appointment_date' => $appointment->schedule_time,
                         'created_at' => $appointment->medicalRecord->created_at,
                     ];
@@ -311,8 +314,9 @@ class PatientController extends Controller
                 'doctor' => function ($query) {
                     $query->with(['user', 'specialty']);
                 },
-                'medicalRecord',
-                'timeSlot'
+                'medicalRecord.files',
+                'timeSlot',
+                'doctorInstruction'
             ])
                 ->where('patient_id', $patientProfile->patient_id)
                 ->orderBy('schedule_time', 'desc')
@@ -326,6 +330,55 @@ class PatientController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve appointments',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get doctor's instructions for a patient's appointment.
+     */
+    public function getAppointmentInstructions($appointmentId)
+    {
+        $user = auth()->user();
+
+        if (!$user->isPatient()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Patient role required.'
+            ], 403);
+        }
+
+        $patientProfile = $user->patientProfile;
+
+        if (!$patientProfile) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Patient profile not found'
+            ], 404);
+        }
+
+        try {
+            $appointment = Appointment::with('doctorInstruction')
+                ->where('appointment_id', $appointmentId)
+                ->where('patient_id', $patientProfile->patient_id)
+                ->first();
+
+            if (!$appointment || !$appointment->doctorInstruction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No instructions found for this appointment'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $appointment->doctorInstruction
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve instructions',
                 'error' => $e->getMessage()
             ], 500);
         }

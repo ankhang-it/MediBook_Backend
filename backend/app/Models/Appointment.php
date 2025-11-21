@@ -67,6 +67,14 @@ class Appointment extends Model
     }
 
     /**
+     * Get the doctor's instructions for the appointment.
+     */
+    public function doctorInstruction(): HasOne
+    {
+        return $this->hasOne(DoctorInstruction::class, 'appointment_id', 'appointment_id');
+    }
+
+    /**
      * Get the payment for the appointment.
      */
     public function payment(): HasOne

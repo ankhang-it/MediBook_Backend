@@ -164,51 +164,19 @@ class PaymentService
             }
 
             if ($paymentData['code'] === '00') {
-                // Update appointment status to confirmed
+                // Only update payment status, NOT appointment status
+                // Appointment status will be updated by doctor when they approve
                 $appointment->update([
-                    'status' => 'confirmed',
                     'payment_status' => 'paid'
                 ]);
 
-                // Mark time slot as unavailable
-                if ($appointment->timeSlot) {
-                    $appointment->timeSlot->update(['is_available' => false]);
-                }
-
-                Log::info('Appointment confirmed and time slot marked as unavailable', [
+                Log::info('Payment completed, payment_status updated to paid', [
                     'appointment_id' => $appointment->appointment_id,
-                    'time_slot_id' => $appointment->time_slot_id
+                    'appointment_status' => $appointment->status
                 ]);
 
-                // Send email notifications
-                try {
-                    // Load relationships for email
-                    $appointment->load(['patient.user', 'doctor.user', 'doctor.specialty']);
-
-                    // Send email to patient
-                    if ($appointment->patient && $appointment->patient->user && $appointment->patient->user->email) {
-                        \Mail::to($appointment->patient->user->email)
-                            ->send(new \App\Mail\AppointmentConfirmedPatient($appointment));
-                        Log::info('Confirmation email sent to patient', [
-                            'patient_email' => $appointment->patient->user->email
-                        ]);
-                    }
-
-                    // Send email to doctor
-                    if ($appointment->doctor && $appointment->doctor->user && $appointment->doctor->user->email) {
-                        \Mail::to($appointment->doctor->user->email)
-                            ->send(new \App\Mail\AppointmentConfirmedDoctor($appointment));
-                        Log::info('Notification email sent to doctor', [
-                            'doctor_email' => $appointment->doctor->user->email
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    // Log email error but don't fail the transaction
-                    Log::error('Failed to send appointment confirmation emails', [
-                        'error' => $e->getMessage(),
-                        'appointment_id' => $appointment->appointment_id
-                    ]);
-                }
+                // Note: Appointment status remains 'pending' until doctor approves
+                // Time slot availability is managed separately
             }
 
             DB::commit();

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\DoctorProfile;
 use App\Models\PatientProfile;
+use App\Models\PasswordResetOtp;
 use App\Mail\RegistrationSuccessMail;
+use App\Mail\PasswordResetOtpMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -374,6 +376,124 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Password change failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Send password reset OTP to user's email.
+     */
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $email = $request->email;
+            
+            // Check if user exists
+            $user = User::where('email', $email)->first();
+            
+            // For security, always return success message even if email doesn't exist
+            if (!$user) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'If the email exists, a password reset code has been sent to your email.'
+                ]);
+            }
+
+            // Create or update OTP
+            $otpRecord = PasswordResetOtp::createOrUpdateOtp($email);
+
+            // Send OTP email
+            try {
+                Mail::to($email)->send(new PasswordResetOtpMail($otpRecord->otp, $email));
+            } catch (\Exception $emailException) {
+                \Log::error('Failed to send password reset OTP email: ' . $emailException->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send email. Please try again later.'
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password reset code has been sent to your email. Please check your inbox.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Forgot password error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process request. Please try again later.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset password using OTP.
+     */
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string|size:4',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $email = $request->email;
+            $otp = $request->otp;
+            $newPassword = $request->password;
+
+            // Verify OTP
+            if (!PasswordResetOtp::verifyOtp($email, $otp)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired OTP. Please request a new one.'
+                ], 400);
+            }
+
+            // Update user password
+            $user = User::where('email', $email)->first();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            $user->update([
+                'password' => Hash::make($newPassword)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password has been reset successfully. You can now login with your new password.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Reset password error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reset password. Please try again.',
                 'error' => $e->getMessage()
             ], 500);
         }

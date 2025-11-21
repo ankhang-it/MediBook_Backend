@@ -24,6 +24,8 @@ use App\Http\Controllers\PaymentController;
 // Public routes
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
+Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('reset-password', [AuthController::class, 'resetPassword']);
 
 // Public routes for departments page
 Route::get('public/doctors', [AdminController::class, 'getDoctorsPublic']);
@@ -60,6 +62,7 @@ Route::group(['middleware' => 'api.auth'], function () {
         Route::post('avatar', [PatientController::class, 'uploadAvatar']);
         Route::get('medical-history', [PatientController::class, 'getMedicalHistory']);
         Route::get('appointments', [PatientController::class, 'getAppointments']);
+        Route::get('appointments/{appointmentId}/instructions', [PatientController::class, 'getAppointmentInstructions']);
     });
 
     // Doctor routes
@@ -67,6 +70,9 @@ Route::group(['middleware' => 'api.auth'], function () {
         Route::get('profile', [DoctorController::class, 'getProfile']);
         Route::post('profile', [DoctorController::class, 'updateProfile']);
         Route::get('appointments', [DoctorController::class, 'getAppointments']);
+        Route::get('appointments/{appointmentId}/instructions', [DoctorController::class, 'getAppointmentInstructions']);
+        Route::post('appointments/{appointmentId}/instructions', [DoctorController::class, 'saveAppointmentInstructions']);
+        Route::post('appointments/{appointmentId}/approve', [DoctorController::class, 'approveAppointment']);
         Route::put('appointments/{appointmentId}/status', [DoctorController::class, 'updateAppointmentStatus']);
         Route::post('appointments/{appointmentId}/medical-record', [DoctorController::class, 'createMedicalRecord']);
         Route::get('statistics', [DoctorController::class, 'getStatistics']);

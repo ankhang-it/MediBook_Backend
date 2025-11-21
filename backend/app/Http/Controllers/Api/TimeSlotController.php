@@ -138,7 +138,8 @@ class TimeSlotController extends Controller
                 ], 400);
             }
 
-            // Create appointment
+            // Create appointment with schedule_time from time slot
+            // schedule_time = date + start_time from time slot
             $scheduleTime = \Carbon\Carbon::parse($timeSlot->date->format('Y-m-d') . ' ' . $timeSlot->start_time->format('H:i:s'));
 
             $appointment = \App\Models\Appointment::create([
@@ -146,8 +147,8 @@ class TimeSlotController extends Controller
                 'patient_id' => $request->patient_id,
                 'doctor_id' => $timeSlot->doctor_id,
                 'time_slot_id' => $timeSlot->id,
-                'schedule_time' => $scheduleTime,
-                'status' => 'pending',
+                'schedule_time' => $scheduleTime, // Lưu đúng ngày và giờ từ time slot
+                'status' => 'pending', // Chờ bác sĩ duyệt
                 'payment_status' => 'unpaid'
             ]);
 
